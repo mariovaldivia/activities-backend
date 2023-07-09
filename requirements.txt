@@ -1,0 +1,16 @@
+Django>=4.0,<5
+psycopg2-binary>=2.8
+gunicorn==19.9.0
+djangorestframework
+djangorestframework-simplejwt
+# djangorestframework-simplejwt[crypto]
+# djangorestframework-jwt
+django-filter
+django-mathfilters
+django-markdown
+django-cors-headers
+django-environ
+Pillow
+# pyjwt
+# Passwords security
+# argon2-cffi==18.3.0
