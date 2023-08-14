@@ -1,5 +1,5 @@
 """Activities views."""
-
+import datetime
 # Django REST Framework
 from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
@@ -20,7 +20,8 @@ from main.serializers.activities import (
 )
 
 # Models
-from main.models import Activity
+from main.models import Activity, ActivityLog
+from main.utils.models import ActivityStatus
 
 
 class ActivityViewSet(mixins.CreateModelMixin,
@@ -36,9 +37,9 @@ class ActivityViewSet(mixins.CreateModelMixin,
     # Filters
     # filter_backends = (SearchFilter, OrderingFilter, DjangoFilterBackend)
     # search_fields = ('slug_name', 'name')
-    # ordering_fields = ('rides_offered', 'rides_taken', 'name', 'created', 'member_limit')
-    # ordering = ('-members__count', '-rides_offered', '-rides_taken')
-    # filter_fields = ('verified', 'is_limited')
+    # ordering_fields = ()
+    # ordering = ()
+    # filter_fields = ()
 
     def get_queryset(self):
         """Restrict list to public-only."""
@@ -73,14 +74,21 @@ class ActivityViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         """Assign user who create ."""
-        activity = serializer.save()
+        activity: Activity = serializer.save()
         activity.created_by = self.request.user
         activity.save()
+        self.create_log(activity=activity)
+
+    @action(detail=False)
+    def coming_activities(self, request):
+        activities = Activity.objects.get_coming_activities().order_by('start')
+        serializer = self.get_serializer(activities, many=True)
+        return Response(serializer.data)
 
     @action(detail=True, methods=['post'])
     def add_worker(self, request, pk=None):
         """ Add worker to activity."""
-        activity = self.get_object()
+        activity: Activity = self.get_object()
         data = request.data
         worker = data['worker']
         if activity.workeractivity_set.filter(worker=worker).exists():
@@ -96,7 +104,7 @@ class ActivityViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post'])
     def add_vehicle(self, request, pk=None):
         """ Add worker to activity."""
-        activity = self.get_object()
+        activity: Activity = self.get_object()
         data = request.data
         vehicle = data['vehicle']
         if activity.vehicleactivity_set.filter(vehicle=vehicle).exists():
@@ -112,26 +120,61 @@ class ActivityViewSet(mixins.CreateModelMixin,
     @action(detail=True, methods=['post'])
     def accept_activity(self, request, pk=None):
         """ Change status of activity to accepted."""
-        activity = self.get_object()
-        activity.status = 'A'
+        activity: Activity = self.get_object()
+        if activity.status != ActivityStatus.REGISTERED.value:
+            return Response(
+                {'message': 'Activity must be in Registered status'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        activity.status = ActivityStatus.ACCEPTED.value
         activity.save()
+        self.create_log(activity=activity)
         data = {'message': 'Activity Accepted'}
         return Response(data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
-    def execute_activity(self, request, pk=None):
-        """ Change status of activity to accepted."""
-        activity = self.get_object()
-        activity.status = 'E'
+    def reject_activity(self, request, pk=None):
+        """ Change status of activity to rejected."""
+        activity: Activity = self.get_object()
+        if activity.status != ActivityStatus.REGISTERED.value:
+            return Response(
+                {'message': 'Activity must be in Registered status'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        activity.status = ActivityStatus.REJECTED.value
         activity.save()
+        self.create_log(activity=activity)
+        data = {'message': 'Activity Rejected'}
+        return Response(data, status=status.HTTP_201_CREATED)
+
+    @action(detail=True, methods=['post'])
+    def execute_activity(self, request, pk=None):
+        """ Change status of activity to executing."""
+        activity: Activity = self.get_object()
+        if activity.status != ActivityStatus.ACCEPTED.value:
+            return Response(
+                {'message': 'Activity must be in accepted status'},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        activity.status = ActivityStatus.EXECUTING.value
+        activity.save()
+        self.create_log(activity=activity)
         data = {'message': 'Activity executed'}
         return Response(data, status=status.HTTP_201_CREATED)
 
     @action(detail=True, methods=['post'])
     def finish_activity(self, request, pk=None):
-        """ Change status of activity to accepted."""
-        activity = self.get_object()
-        activity.status = 'D'
+        """ Change status of activity to done."""
+        activity: Activity = self.get_object()
+        activity.status = ActivityStatus.DONE.value
         activity.save()
+        self.create_log(activity=activity)
         data = {'message': 'Activity done'}
         return Response(data, status=status.HTTP_201_CREATED)
+
+    def create_log(self, activity: Activity):
+        ActivityLog.objects.create(
+            activity=activity,
+            status=activity.status,
+            created_by=self.request.user
+        )

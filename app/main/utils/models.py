@@ -1,4 +1,5 @@
 from django.db import models
+from enum import Enum
 
 
 class BaseModel(models.Model):
@@ -13,3 +14,15 @@ class BaseModel(models.Model):
         abstract = True
         get_latest_by = 'created'
         ordering = ['-created', '-modified']
+
+
+class ActivityStatus(Enum):
+    REGISTERED = 'R'
+    ACCEPTED = 'A'
+    REJECTED = 'RJ'
+    EXECUTING = 'E'
+    DONE = 'D'
+
+    @classmethod
+    def get_value(cls, member):
+        return cls[member].value[0]

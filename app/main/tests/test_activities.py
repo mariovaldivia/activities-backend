@@ -51,6 +51,7 @@ class ActivityTests(APITestCase):
         # self.client.force_login(self.user)
         data = {
             'description': 'test activity',
+            'detail': 'Esta es una actividad de prueba',
             'customer': self.customer_1.id,
             'start': '2023-01-10',
             'finish': '2023-01-10',
@@ -59,6 +60,8 @@ class ActivityTests(APITestCase):
         response = self.client.post(url, data=data, format='json')
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['created_by'], self.user.id)
+        self.assertEqual(response.data['status'], 'R')
+
 
         self.activity_id = response.data['id']
         url = reverse('main:activities-add-worker',

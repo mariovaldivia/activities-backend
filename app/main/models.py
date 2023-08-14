@@ -3,7 +3,7 @@ from django.conf import settings
 
 from main.managers.activities import ActivityManager
 from main.managers.customers import CustomerManager
-from main.utils.models import BaseModel
+from main.utils.models import BaseModel, ActivityStatus
 
 
 class Customer(BaseModel):
@@ -33,6 +33,10 @@ class VehicleType(BaseModel):
     def __str__(self):
         return self.name
 
+    class Meta:
+        verbose_name_plural = "Vehicle Types"
+        ordering = ['name']
+
 
 class Vehicle(BaseModel):
     """ Vehicle Entity """
@@ -48,17 +52,35 @@ class Vehicle(BaseModel):
     def __str__(self):
         return f"{self.brand} {self.model} {self.plate}"
 
+    class Meta:
+        verbose_name_plural = "Vehicles"
+        ordering = ['-created']
+
 
 class Activity(BaseModel):
     """ Activity Entity """
+    STATUS = (
+        ('R', 'REGISTERED'),
+        ('A', 'ACCEPTED'),
+        ('RJ', 'REJECTED'),
+        ('E', 'EXECUTING'),
+        ('D', 'DONE')
+    )
     objects = ActivityManager()
     description = models.TextField()
     detail = models.TextField()
-    status = models.CharField(max_length=2, default="R")
+    status = models.CharField(
+        max_length=2,
+        choices=STATUS,
+        default=ActivityStatus.REGISTERED.value)
     start = models.DateField()
     finish = models.DateField()
     customer = models.ForeignKey(
         Customer,
+        null=True,
+        on_delete=models.SET_NULL)
+    contract = models.ForeignKey(
+        'main.Contract',
         null=True,
         on_delete=models.SET_NULL)
     created_by = models.ForeignKey(
@@ -78,9 +100,35 @@ class Activity(BaseModel):
     def __str__(self) -> str:
         return f"{self.description}"
 
+    def status_name(self) -> str:
+        return ActivityStatus(self.status).name
+
     class Meta:
         verbose_name_plural = "Activities"
         ordering = ['-created']
+
+
+class ActivityLog(BaseModel):
+    """ Activity Log Entity """
+    activity = models.ForeignKey(
+        Activity,
+        on_delete=models.CASCADE,
+        related_name='logs')
+    status = models.CharField(
+        max_length=2,
+        default=ActivityStatus.REGISTERED.value)
+    comment = models.TextField(null=True)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL)
+
+    def __str__(self):
+        return f"{self.activity} {ActivityStatus(self.status).name}"
+
+    class Meta:
+        verbose_name_plural = "Logs of activities"
+        ordering = ['created']
 
 
 class WorkerActivity(BaseModel):
@@ -109,4 +157,38 @@ class VehicleActivity(BaseModel):
 
     class Meta:
         verbose_name_plural = "Vehicles of activities"
+        ordering = ['-created']
+
+
+class Contract(BaseModel):
+    """ Contract entity """
+    customer = models.ForeignKey(
+        Customer,
+        on_delete=models.CASCADE
+    )
+    identification = models.CharField(max_length=20, null=True)
+    description = models.TextField()
+    detail = models.TextField(null=True)
+    # status = models.CharField(
+    #     max_length=2,
+    #     default=ActivityStatus.REGISTERED.value)
+    start = models.DateField()
+    finish = models.DateField()
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        null=True,
+        on_delete=models.SET_NULL,
+    )
+    is_active = models.BooleanField(default=True)
+
+    def __str__(self):
+        return f"{self.identification} {self.customer}"
+
+    def get_customer_name(self) -> str:
+        if not self.customer_id:
+            return ''
+        return self.customer.name
+
+    class Meta:
+        verbose_name_plural = "Contracts"
         ordering = ['-created']

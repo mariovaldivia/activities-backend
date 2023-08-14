@@ -4,8 +4,9 @@
 from rest_framework import serializers
 
 # Model
-from main.models import Activity, WorkerActivity, VehicleActivity
+from main.models import Activity, WorkerActivity, VehicleActivity, ActivityLog
 from main.serializers.customers import CustomerModelSerializer
+from main.serializers.contracts import ContractModelSerializer
 from main.serializers.vehicles import VehicleModelSerializer
 
 from users.serializers.users import UserModelSerializer
@@ -27,6 +28,7 @@ class ActivityModelSerializer(serializers.ModelSerializer):
             'status',
             'created',
             'customer',
+            'contract',
             'created_by'
         )
         # read_only_fields = (
@@ -76,9 +78,27 @@ class VehicleActivityDetailSerializer(serializers.ModelSerializer):
         # )
 
 
+class ActivityLogSerializer(serializers.ModelSerializer):
+    """ Activity Log model serializer."""
+
+    class Meta:
+        """Meta class."""
+
+        model = ActivityLog
+        fields = (
+            'status',
+            'created'
+        )
+        read_only_fields = (
+            'created_by',
+            'created'
+        )
+
+
 class ActivityDetailSerializer(serializers.ModelSerializer):
     """Activity model serializer."""
     customer = CustomerModelSerializer()
+    contract = ContractModelSerializer()
     # workers = UserModelSerializer(many=True)
     workers_assigned = WorkerActivityDetailSerializer(
         source='workeractivity_set',
@@ -86,6 +106,10 @@ class ActivityDetailSerializer(serializers.ModelSerializer):
         read_only=True)
     vehicles_assigned = VehicleActivityDetailSerializer(
         source='vehicleactivity_set',
+        many=True,
+        read_only=True)
+
+    logs = ActivityLogSerializer(
         many=True,
         read_only=True)
 
@@ -102,9 +126,11 @@ class ActivityDetailSerializer(serializers.ModelSerializer):
             'finish',
             'created',
             'customer',
+            'contract',
             'created_by',
             'workers_assigned',
-            'vehicles_assigned'
+            'vehicles_assigned',
+            'logs'
         )
         # read_only_fields = (
         #     'created_by',
