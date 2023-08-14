@@ -2,13 +2,17 @@
 
 # Django REST Framework
 from rest_framework import serializers
-
+from rest_framework.validators import UniqueValidator
 # Model
 from main.models import Vehicle
 
 
 class VehicleModelSerializer(serializers.ModelSerializer):
     """ Vehicle model serializer."""
+    plate = serializers.CharField(
+        max_length=10,
+        validators=[UniqueValidator(queryset=Vehicle.objects.all())]
+    )
 
     class Meta:
         """Meta class."""
@@ -21,11 +25,3 @@ class VehicleModelSerializer(serializers.ModelSerializer):
             'plate',
             'type'
         )
-
-    # def validate(self, data):
-    #     """Ensure both members_limit and is_limited are present."""
-    #     members_limit = data.get('members_limit', None)
-    #     is_limited = data.get('is_limited', False)
-    #     if is_limited ^ bool(members_limit):
-    #         raise serializers.ValidationError('If circle is limited, a member limit must be provided')
-    #     return data
