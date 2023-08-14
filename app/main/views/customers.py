@@ -5,7 +5,6 @@ from rest_framework import mixins, viewsets
 
 # Permissions
 # from rest_framework.permissions import IsAuthenticated
-# from cride.circles.permissions.circles import IsCircleAdmin
 from main.permissions.activities import IsOwner
 # Filters
 # from rest_framework.filters import SearchFilter, OrderingFilter
