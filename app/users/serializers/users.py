@@ -27,6 +27,7 @@ class UserModelSerializer(serializers.ModelSerializer):
 
     # profile = ProfileModelSerializer(read_only=True)
     image = serializers.ImageField(required=False)
+
     class Meta:
         """Meta class."""
 
@@ -39,7 +40,7 @@ class UserModelSerializer(serializers.ModelSerializer):
             'email',
             'phone_number',
             'department',
-            'image', 
+            'image',
         )
 
 
@@ -60,7 +61,8 @@ class UserSignUpSerializer(serializers.Serializer):
     # Phone number
     phone_regex = RegexValidator(
         regex=r'\+?1?\d{9,15}$',
-        message="Phone number must be entered in the format: +999999999. Up to 15 digits allowed."
+        message="Phone number must be entered in the format: +999999999. \
+            Up to 15 digits allowed."
     )
     phone_number = serializers.CharField(validators=[phone_regex])
 
@@ -139,6 +141,6 @@ class AccountVerificationSerializer(serializers.Serializer):
     def save(self):
         """Update user's verified status."""
         payload = self.context['payload']
-        user = User.objects.get(username=payload['user'])
+        user: User = User.objects.get(username=payload['user'])
         user.is_verified = True
         user.save()

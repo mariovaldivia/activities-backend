@@ -9,6 +9,7 @@ from django.template.defaultfilters import slugify
 # Utilities
 from main.utils.models import BaseModel
 
+
 def directory_user_path(instance, filename):
     """ Directory to store user's images """
     path = 'users/'
@@ -27,12 +28,13 @@ class Management(BaseModel):
         verbose_name_plural = "Managements"
         ordering = ['-created']
 
+
 class Department(BaseModel):
     """ Department model """
     name = models.CharField(max_length=50)
     management = models.ForeignKey(
-        Management, 
-        null=False, 
+        Management,
+        null=False,
         on_delete=models.CASCADE)
 
     def __str__(self):
@@ -41,6 +43,7 @@ class Department(BaseModel):
     class Meta:
         verbose_name_plural = "Departments"
         ordering = ['-created']
+
 
 class User(BaseModel, AbstractUser):
     """User model.
@@ -65,12 +68,12 @@ class User(BaseModel, AbstractUser):
         max_length=17, blank=True)
 
     department = models.ForeignKey(
-        Department, 
-        null=True, 
+        Department,
+        null=True,
         on_delete=models.SET_NULL)
-    
+
     image = models.FileField(
-        verbose_name='Imagen', 
+        verbose_name='Imagen',
         null=True,
         upload_to=directory_user_path,
         blank=True)

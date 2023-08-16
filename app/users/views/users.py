@@ -105,3 +105,9 @@ class UserViewSet(mixins.RetrieveModelMixin,
         response = super(UserViewSet, self).retrieve(request, *args, **kwargs)
 
         return response
+
+    @action(detail=False)
+    def last_users(self, request):
+        users = User.objects.filter(is_active=True)
+        serializer = self.get_serializer(users[:3], many=True)
+        return Response(serializer.data)
