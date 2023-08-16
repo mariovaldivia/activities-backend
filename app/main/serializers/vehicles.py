@@ -13,6 +13,10 @@ class VehicleModelSerializer(serializers.ModelSerializer):
         max_length=10,
         validators=[UniqueValidator(queryset=Vehicle.objects.all())]
     )
+    type_name = serializers.CharField(
+        source='get_type_name',
+        read_only=True
+    )
 
     class Meta:
         """Meta class."""
@@ -23,5 +27,6 @@ class VehicleModelSerializer(serializers.ModelSerializer):
             'brand',
             'model',
             'plate',
-            'type'
+            'type',
+            'type_name'
         )

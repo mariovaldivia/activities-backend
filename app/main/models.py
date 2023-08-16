@@ -49,8 +49,13 @@ class Vehicle(BaseModel):
         on_delete=models.SET_NULL
     )
 
-    def __str__(self):
+    def __str__(self) -> str:
         return f"{self.brand} {self.model} {self.plate}"
+    
+    def get_type_name(self) -> str:
+        """ Name of type of vehicle """
+        return str(self.type) if self.type_id else ''
+
 
     class Meta:
         verbose_name_plural = "Vehicles"

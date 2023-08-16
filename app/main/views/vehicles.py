@@ -2,6 +2,8 @@
 
 # Django REST Framework
 from rest_framework import mixins, viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
 
 # Permissions
 # from rest_framework.permissions import IsAuthenticated
@@ -38,10 +40,10 @@ class VehicleViewSet(mixins.CreateModelMixin,
 
     def perform_create(self, serializer):
         """Assign created by."""
-        customer = serializer.save()
+        vehicle: Vehicle = serializer.save()
         user = self.request.user
-        customer.created_by = user
-        customer.save()
+        vehicle.created_by = user
+        vehicle.save()
 
     def get_permissions(self):
         """Assign permissions based on action."""
@@ -49,3 +51,9 @@ class VehicleViewSet(mixins.CreateModelMixin,
         if self.action in ['update', 'partial_update']:
             permissions.append(IsOwner)
         return [permission() for permission in permissions]
+
+    @action(detail=False)
+    def last_vehicles(self, request):
+        vehicles = self.get_queryset()
+        serializer = self.get_serializer(vehicles[:3], many=True)
+        return Response(serializer.data)
